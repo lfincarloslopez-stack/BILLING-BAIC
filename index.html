@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Facturación de vehículos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B3D77">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Facturación">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{
+  --bg:#EFF2F5; --surface:#FFFFFF; --ink:#0B1E33; --muted:#5B6B7C; --line:#DDE3E8;
+  --accent:#0B3D77; --accent-ink:#FFFFFF; --accent-soft:#DCE6F0;
+  --in:#FFFFFF; --calc:#F5F7F9; --calc-ink:#38495C; --calc-head:#DDE3E8;
+  --warn:#C8102E; --warn-bg:#FBE1E5; --ok:#1D7A4B; --gold:#B8862B;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --head:'Barlow Semi Condensed',var(--sans);
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A131F; --surface:#101C2C; --ink:#EAEEF2; --muted:#8FA0B3; --line:#24374C;
+    --accent:#3E7BCB; --accent-ink:#06182A; --accent-soft:#12345C;
+    --in:#101C2C; --calc:#152336; --calc-ink:#B9C6D4; --calc-head:#1C2C40;
+    --warn:#E14A5F; --warn-bg:#33131A; --ok:#62C48F; --gold:#D4A94C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A131F; --surface:#101C2C; --ink:#EAEEF2; --muted:#8FA0B3; --line:#24374C;
+  --accent:#3E7BCB; --accent-ink:#06182A; --accent-soft:#12345C;
+  --in:#101C2C; --calc:#152336; --calc-ink:#B9C6D4; --calc-head:#1C2C40;
+  --warn:#E14A5F; --warn-bg:#33131A; --ok:#62C48F; --gold:#D4A94C;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+h1{font-family:var(--head);font-size:23px;font-weight:700;margin:0;letter-spacing:.01em;text-transform:uppercase}
+.wrap{max-width:1500px;margin:0 auto;padding:18px 16px 60px}
+.top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:4px solid var(--warn)}
+.brand-logo{display:block;height:18px;width:auto;margin-bottom:10px}
+.sub{margin:2px 0 0;color:var(--muted);max-width:60ch}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.status{color:var(--muted);font-size:12px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:disabled{opacity:.5;cursor:not-allowed}
+.btn.danger{border-color:var(--warn);color:var(--warn)}
+.btn.sm{padding:4px 9px;font-size:13px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+details.menu{position:relative}
+details.menu>summary{list-style:none;cursor:pointer}
+details.menu>summary::-webkit-details-marker{display:none}
+details.menu .pop{position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:230px;z-index:30;display:flex;flex-direction:column;gap:2px;box-shadow:0 6px 24px rgba(0,0,0,.14)}
+details.menu .pop button,details.menu .pop label{background:none;border:0;text-align:left;padding:8px 10px;border-radius:5px;cursor:pointer;display:block}
+details.menu .pop button:hover,details.menu .pop label:hover{background:var(--accent-soft)}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:9px 14px;cursor:pointer;font-family:var(--head);font-weight:600;letter-spacing:.02em;text-transform:uppercase;font-size:13px;color:var(--muted);white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--warn);font-weight:600}
+.panel[hidden]{display:none}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:7px 18px;cursor:pointer;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.ctrl{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end;margin:12px 0 10px}
+.ctrl label,.tools label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.ctrl select,.ctrl input,.tools input[type=text]{border:1px solid var(--line);background:var(--in);border-radius:6px;padding:7px 9px;color:var(--ink);min-width:110px}
+.who{color:var(--muted);font-size:13px;padding-bottom:8px}
+.who b{color:var(--ink);font-weight:600}
+.totals{display:flex;flex-wrap:wrap;gap:6px 26px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:10px}
+.totals div{display:flex;flex-direction:column}
+.totals span{font-size:12px;color:var(--muted)}
+.totals strong{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.tools{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0 0 6px}
+.tools label{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px}
+.tools input[type=text]{min-width:0;width:70px;padding:5px 7px}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 8px;max-width:110ch}
+
+.gridwrap{overflow:auto;max-height:66vh;max-width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+.grid th,.grid td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0;text-align:left;vertical-align:middle;white-space:nowrap}
+.grid thead th{position:sticky;top:0;z-index:2;padding:7px 9px;font-weight:600;font-size:12.5px}
+.grid thead tr.grp th{top:0;font-size:12px;font-weight:600;padding:6px 9px}
+.grid thead tr.h2 th{top:30px}
+.grid th.in{background:var(--accent-soft);color:var(--ink)}
+.grid th.calc,.grid th.g-calc{background:var(--calc-head);color:var(--calc-ink)}
+.grid th.g-in{background:var(--accent);color:var(--accent-ink)}
+.grid th.g-calc{background:var(--calc-ink);color:var(--calc)}
+.grid th.g-blank{background:var(--surface)}
+.grid th.n,.grid td.n{width:38px;min-width:38px;text-align:center;color:var(--muted);font-size:12px;background:var(--surface)}
+.grid td.inc{background:var(--in)}
+.grid td.inc input{width:100%;border:0;background:transparent;padding:7px 9px;min-width:80px;outline-offset:-2px}
+.grid td.inc input:focus{background:var(--accent-soft)}
+.grid td.inc input.mono,.grid td.calc.mono{font-family:var(--mono);font-size:12.5px}
+.grid td.inc input.num,.grid td.calc.num{text-align:right;font-variant-numeric:tabular-nums}
+.grid td.inc input.warn{background:var(--warn-bg);color:var(--warn)}
+.grid td.calc{background:var(--calc);color:var(--calc-ink);padding:7px 9px;font-size:13px}
+.grid td.calc.wide{max-width:420px;overflow:hidden;text-overflow:ellipsis}
+.grid tr.blank td.calc{color:transparent}
+.grid td .x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px 9px}
+.grid td .x:hover{color:var(--warn)}
+.grid.ro td{padding:6px 9px;font-size:12.5px;background:var(--in)}
+.grid.ro td.calc{background:var(--calc)}
+.grid.ro td.num{text-align:right;font-variant-numeric:tabular-nums}
+.grid.ro th.const{background:var(--surface);color:var(--muted);border-bottom:2px solid var(--line)}
+.rowtools{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+details.box{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+details.box summary{cursor:pointer;font-weight:600}
+details.box textarea{width:100%;min-height:110px;margin:8px 0;border:1px solid var(--line);border-radius:6px;background:var(--in);padding:8px;font-family:var(--mono);font-size:12.5px}
+.fixed-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.fixed-grid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.fixed-grid input{border:1px solid var(--line);background:var(--in);border-radius:6px;padding:6px 8px;width:140px}
+.empty{padding:22px;color:var(--muted)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:50;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .15s}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <img class="brand-logo" src="data:image/png;base64,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" alt="BAIC MX" width="140" height="16">
+      <h1>Facturación de vehículos</h1>
+      <p class="sub">Captura o pega solo lo que no lleva fórmula. Al descargar se genera un CSV por modelo, igual al formato que ya usas (Folio…Errores), listo para tu proceso de facturación.</p>
+    </div>
+    <div class="top-actions">
+      <span class="status" id="status" role="status"></span>
+      <details class="menu" id="bkMenu">
+        <summary class="btn">Respaldo</summary>
+        <div class="pop">
+          <button id="bkSave" type="button">Guardar respaldo (.json)</button>
+          <label>Restaurar respaldo<input id="bkFile" type="file" accept=".json,application/json" hidden></label>
+          <button id="bkReset" type="button">Volver a los datos de ejemplo</button>
+        </div>
+      </details>
+      <button class="btn primary" id="btnExport" type="button">Descargar CSV</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" data-tab="bill" aria-selected="true">Facturación</button>
+    <button role="tab" data-tab="alloc" aria-selected="false">Asignación</button>
+    <button role="tab" data-tab="ctr" aria-selected="false">Consecutivos</button>
+    <button role="tab" data-tab="dealers" aria-selected="false">Dealers</button>
+    <button role="tab" data-tab="models" aria-selected="false">Modelos</button>
+    <button role="tab" data-tab="prev" aria-selected="false">Vista previa</button>
+  </nav>
+
+  <section class="panel" id="p-bill" role="tabpanel">
+    <div class="seg" id="brandSeg" aria-label="Hoja de facturación">
+      <button type="button" data-brand="baic" aria-pressed="true">BAIC</button>
+      <button type="button" data-brand="arcfox" aria-pressed="false">Arcfox</button>
+    </div>
+    <div class="ctrl">
+      <label>Cliente (dealer)<select id="cust"></select></label>
+      <label>Mes<select id="month"></select></label>
+      <label>Año del folio<input id="year" inputmode="numeric" maxlength="4" style="width:90px;min-width:0"></label>
+      <div class="who" id="who"></div>
+    </div>
+    <div class="totals" id="totals"></div>
+    <details class="box" id="modelTotalsBox" open>
+      <summary>Total con IVA por modelo (evita capturarlo fila por fila)</summary>
+      <p class="hint" style="margin:8px 0">Si todas las unidades de un modelo llevan el mismo precio, captúralo aquí una sola vez y aplícalo a esas filas en lugar de escribirlo en cada una.</p>
+      <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);margin:0 0 10px"><input type="checkbox" id="mtOnlyEmpty" checked> Aplicar solo a filas de ese modelo que aún no tengan Total capturado</label>
+      <div class="mt-body"></div>
+    </details>
+    <div class="tools">
+      <label>Último No. asignado <input type="text" id="lastNum" inputmode="numeric" autocomplete="off"></label>
+      <span class="status">Siguiente: <b id="nextNum">1</b></span>
+      <button class="btn sm" id="btnNum" type="button">Numerar filas sin factura</button>
+      <label><input type="checkbox" id="autoNum" checked> Numerar automáticamente</label>
+      <label><input type="checkbox" id="optCols"> Mostrar campos opcionales</label>
+    </div>
+    <p class="hint">Pega desde Excel en cualquier celda blanca: se llenan las filas y columnas hacia abajo y a la derecha, en el orden de las columnas de captura. Las celdas grises no se editan. El No. de factura se asigna solo: el consecutivo se lleva por dealer y mes, cada mes empieza en 1 y se recuerda el último número asignado (se comparte entre BAIC y Arcfox porque el folio no distingue marca).</p>
+    <div class="gridwrap"><table class="grid" id="grid"></table></div>
+    <div class="rowtools">
+      <button class="btn sm" id="btnAddRow" type="button">Agregar fila</button>
+      <button class="btn sm danger" id="btnClear" type="button">Vaciar filas de esta hoja</button>
+    </div>
+    <datalist id="modelList"></datalist>
+    <details class="box">
+      <summary>Valores fijos de cada concepto</summary>
+      <div class="fixed-grid" id="fixedGrid"></div>
+    </details>
+  </section>
+
+  <section class="panel" id="p-alloc" role="tabpanel" hidden>
+    <p class="hint">Carga el archivo Excel de ALLOCATION (mismos encabezados: #, Pedimento, Model, VIN, Engine number, Engine Type, Motor type / Transmisión, Exterior Color, In Color, Model Year, REPUVE, Loc, Status, Payment, FF, Dealer) o pégalo abajo. Marca las unidades que vas a facturar y pásalas a la hoja BAIC o Arcfox: se llenan modelo, VIN, motor, colores, año, pedimento y fecha de pedimento. Después solo faltan No. de factura y Total.</p>
+    <div class="ctrl" style="margin-top:0">
+      <label class="btn" style="cursor:pointer">Cargar archivo Excel (.xlsx)<input id="allocFile" type="file" accept=".xlsx,.xls,.csv" hidden></label>
+      <label>Pasar unidades marcadas a<select id="allocTarget"><option value="baic">Hoja BAIC</option><option value="arcfox">Hoja Arcfox</option></select></label>
+      <button class="btn primary" id="btnSend" type="button">Pasar a facturación</button>
+    </div>
+    <div id="allocHost"></div>
+  </section>
+
+  <section class="panel" id="p-ctr" role="tabpanel" hidden>
+    <p class="hint">Último No. de factura asignado a cada dealer en el mes elegido. Cada mes inicia en 1 y la siguiente solicitud de facturación continúa desde el último número guardado. Si facturaste fuera de esta herramienta, corrige aquí el último número.</p>
+    <div class="ctrl" style="margin-top:0">
+      <label>Mes<select id="ctrMonth"></select></label>
+      <label>Año<input id="ctrYear" inputmode="numeric" maxlength="4" style="width:90px;min-width:0"></label>
+    </div>
+    <div id="ctrHost"></div>
+  </section>
+
+  <section class="panel" id="p-dealers" role="tabpanel" hidden>
+    <p class="hint">Datos fiscales de cada cliente. La columna DEALER es el código que eliges en la hoja de facturación y FLAG es la parte del folio (BMX-<i>FLAG</i>-año-mes-factura).</p>
+    <div id="dealersHost"></div>
+  </section>
+
+  <section class="panel" id="p-models" role="tabpanel" hidden>
+    <p class="hint">Catálogo de modelos. Al escribir un modelo en la hoja de facturación se toman de aquí el tipo, motor, transmisión y clave vehicular.</p>
+    <div id="modelsHost"></div>
+  </section>
+
+  <section class="panel" id="p-prev" role="tabpanel" hidden>
+    <div class="seg" id="prevSeg" aria-label="Hoja a previsualizar">
+      <button type="button" data-brand="baic" aria-pressed="true">BAIC</button>
+      <button type="button" data-brand="arcfox" aria-pressed="false">Arcfox</button>
+    </div>
+    <p class="hint">Así queda cada hoja en el Excel con todas las columnas. En el archivo descargado, las columnas grises llevan fórmulas reales.</p>
+    <div class="gridwrap"><table class="grid ro" id="prevGrid"></table></div>
+  </section>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="lib/xlsx.full.min.js"></script>
+<script>
+const SEED = {"dealers": [["REFRAN", "REFRAN ORIENTAL", "ROU990322BP7", 601, "G01", "AV. LAZARO CARDENAS", "RESIDENCIAL SAN AGUSTIN", 2510, "8 2 PISO", "66260", "SAN PEDRO GARZA GARCIA", 19, "03", "", "PUE", "RFN"], ["GRUMAR", "DICHISA CHIAPAS", "DCI0811075Y5", 601, "G01", "CARR. LIBRAMIENTO SUR PONIENTE KM 0700", "BUENOS AIRES", "SN", "D", "30798", "TAPACHULA", 5, "03", "", "PUE", "GRM"], ["JEBLA", "AUTOJEBLA", "AUT1801103U0", 601, "G01", "BLVD. NACIONES UNIDAS", "BENITO JUAREZ", 3525, "", "87028", "VICTORIA", 28, "03", "", "PUE", "JEB"], ["NOMAD", "NOMAD TAXY", "NTA220217LK6", 601, "G01", "BLVD CATARATAS", "JARDINES DEL PEDREGAL DE SAN ANGEL", 29, "", "04500", "COYOACAN", 9, "03", "", "PUE", "NOM"], ["RR", "AUTOMOTRIZ BONAPARTE", "ABO1804266W1", 601, "G01", "AV. LAS AMERICAS", "FRACC DE LAS AMERICAS", 196, "", "94299", "BOCA DEL RIO", 30, "03", "", "PUE", "RR"], ["XIAN", "XIAN MOTORS", "XMO200121AX1", 601, "G01", "AV. VALLARTA EJE PTE", "SAN JUAN DE OCOTAN", "401 A", "", "45019", "ZAPOPAN", 14, "03", "", "PUE", "XIA"], ["COSMOS", "COSMOS NATION", "ODV180424BI5", 601, "G01", "GUILLERMO GONZALEZ CAMARENA", "SANTA FE", 1450, "PISO 8", "01210", "ALVARO OBREGON", 9, "03", "", "PUE", "CSM"], ["SADO", "GS MOVILIDAD", "GMO2308302HA", 601, "G01", "AV. JUAREZ", "ZONA ESMERALDA", 1901, "", "72090", "PUEBLA", 21, "03", "", "PUE", "SAD"], ["CIP", "CAMIONES INNOVADORES DEL PACIFICO", "CIP220420EV8", 601, "G01", "CARR. LIBRAMIENTO CARRETERO MEXICO-NOGALES", "", 487, "", "63792", "XALISCO", 18, "03", "", "PUE", "CIP"]], "models": [["U5P", "Sedán", "Gasoline", "1.5L", "5MT", "0984601"], ["BJ30e LV5", "SUV", "Hybrid", "1.5T", "2DHT", "6982002"], ["BJ30e LV4", "SUV", "Hybrid", "1.5T", "2DHT", "6982001"], ["BJ30 LV2", "SUV", "Gasoline", "1.5T", "2DHT", "0984707"], ["X55", "SUV", "Gasoline", "1.5T", "7DCT", "0984704"], ["T1 LV2", "SUV", "Electric", "70KW", "", "9988701"], ["X35", "SUV", "Gasoline", "1.5T", "CVT", "0984702"]], "alloc": [{"v": ["1", "25 51 1669 5003310 (22/12/2025)", "U5P", "LNBSCCAH0TD153564", "DM01R026587", "Gasoline", "1.5L 5MT", "Blanco Perlado", "Negro", "2026", "31432424", "Lázaro Cárdenas, Michoacán, México", "Pending", "Bloqueo de tablero", "", "LOIALT"], "sel": true}, {"v": ["2", "25 51 1669 6000664 (14/01/2026)", "U5P", "LNBSCCAHXTD176785", "DM01R034604", "Gasoline", "1.5L 5MT", "Blanco Perlado", "Negro", "2026", "31432378", "Lázaro Cárdenas, Michoacán, México", "Pending", "", "", "LOIALT"], "sel": true}, {"v": ["3", "25 51 1669 6000664 (14/01/2026)", "U5P", "LNBSCCAH5TD176905", "DM01R034501", "Gasoline", "1.5L 5MT", "Blanco Perlado", "Negro", "2026", "31432371", "Lázaro Cárdenas, Michoacán, México", "Pending", "", "", "LOIALT"], "sel": true}], "consts": {"claveProd": "25101503", "claveUnidad": "NV", "unidad": "VEHICULO", "cantidad": "1", "objetoImp": "2"}, "sheets": {"baic": {"customer": "NOMAD", "month": "SEP", "year": "2026", "rows": [{"fac": "16", "total": "249312", "ped": "25-51-1669-5003310", "pedido": "", "mail": "", "facturado": "", "errores": "", "model": "U5P", "year": "2026", "color": "Blanco Perlado", "int": "Negro", "vin": "LNBSCCAH0TD153564", "eng": "DM01R026587", "pedDate": "(22/12/2025)", "demo": ""}, {"fac": "17", "total": "249312", "ped": "25-51-1669-6000664", "pedido": "", "mail": "", "facturado": "", "errores": "", "model": "U5P", "year": "2026", "color": "Blanco Perlado", "int": "Negro", "vin": "LNBSCCAHXTD176785", "eng": "DM01R034604", "pedDate": "(14/01/2026)", "demo": ""}, {"fac": "18", "total": "249312", "ped": "25-51-1669-6000664", "pedido": "", "mail": "", "facturado": "", "errores": "", "model": "U5P", "year": "2026", "color": "Blanco Perlado", "int": "Negro", "vin": "LNBSCCAH5TD176905", "eng": "DM01R034501", "pedDate": "(14/01/2026)", "demo": ""}]}, "arcfox": {"customer": "NOMAD", "month": "AUG", "year": "2026", "rows": [{"fac": "11", "total": "424514", "ped": "26 51 1669 6005499", "pedido": "", "mail": "", "facturado": "", "errores": "", "model": "T1 LV2", "year": "2026", "color": "Gris Titanio", "int": "Negro", "vin": "LNBSC1AK1TR242630", "eng": "ZD37TS102476423", "pedDate": "(04/05/2026)", "demo": ""}]}}};
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const STORE_KEY = 'billing-master-v2-consecutivo';
+let S = null;
+
+/* ==== CORE START ==== */
+const FULL = [
+ ['A','Folio','f'],['B','No. Factura','i'],['C','Razon Social','f'],['D','RFC','f'],['E','Fiscal Regime','f'],['F','UsoCFDI','f'],['G','Calle','f'],['H','Colonia','f'],['I','No. Exterior','f'],['J','No. Interior','f'],['K','CP','f'],['L','Municipio','f'],['M','Estado','f'],['N','Forma de Pago','f'],['O','Condiciones de Pago','f'],['P','Metodo de Pago','f'],['Q','Observaciones','f'],['R','ClaveProdServ','c'],['S','Concepto','f'],['T','ClaveUnidad','c'],['U','Unidad','c'],['V','Cantidad','c'],['W','Precio Unitario','f'],['X','Objeto Impuesto','c'],['Y','Subtotal del Concepto','f'],['Z','IVA del Concepto','f'],['AA','Total del Concepto','i'],['AB','No.Pedimento','i'],['AC','Pedido','i'],['AD','Mail','i'],['AE','Facturado','i'],['AF','Errores','i'],['AG','TYPE','f'],['AH','MODEL','i'],['AI','YEAR','i'],['AJ','TYPE','f'],['AK','MOTOR','f'],['AL','TRANSMISSION','f'],['AM','COLOR','i'],['AN','INTERIOR','i'],['AO','VIN','i'],['AP','ENGINE NUMBER','i'],['AQ','VEHICULAR CODE','f'],['AR','PEDIMENTO DATE','i'],['AS','Demo','i']
+].map(([L,h,kind])=>({L,h,kind}));
+const MONEY = new Set(['W','Y','Z','AA']);
+const DEALER_HEADERS = ['DEALER','Razon Social','RFC','Fiscal Regime','UsoCFDI','Calle','Colonia','No. Exterior','No. Interior','CP','Municipio','Estado','Forma de Pago','Condiciones de Pago','Metodo de Pago','FLAG'];
+const MODEL_HEADERS = ['Modelo','Tipo','Tipo de motor','Motor','Transmisión','Clave vehicular'];
+const ALLOC_HEADERS = ['#','Pedimento','Model','VIN','Engine number','Engine Type','Motor type / Transmisión','Exterior Color','In Color','Model Year','REPUVE','Loc','Status','Payment','FF','Dealer'];
+const ROW_KEYS = ['fac','model','year','color','int','vin','eng','ped','pedDate','total','pedido','mail','facturado','errores','demo'];
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num = v => { if (typeof v === 'number') return v; const n = parseFloat(String(v == null ? '' : v).replace(/[$,\s]/g,'')); return isNaN(n) ? 0 : n; };
+const r2 = n => { const s = n < 0 ? -1 : 1; return s * Math.round((Math.abs(n) + 1e-9) * 100) / 100; };
+const numOrStr = v => { const t = String(v == null ? '' : v).trim(); if (t === '') return ''; return (/^-?\d+(\.\d+)?$/.test(t) && !/^-?0\d/.test(t)) ? Number(t) : t; };
+const blankRow = () => { const o = {}; ROW_KEYS.forEach(k => o[k] = ''); return o; };
+const isUsed = row => ['fac','model','vin','total','eng','ped'].some(k => String(row[k] == null ? '' : row[k]).trim() !== '');
+const dealerBy = code => S.dealers.find(d => String(d[0]).toLowerCase() === String(code == null ? '' : code).toLowerCase());
+const modelBy = m => { const t = String(m == null ? '' : m).trim().toLowerCase(); return t === '' ? undefined : S.models.find(x => String(x[0]).trim().toLowerCase() === t); };
+const orZero = v => (v === '' || v == null) ? 0 : v;
+
+function cellsFor(brand, sh, row, r, nm) {
+  const d = dealerBy(sh.customer), m = modelBy(row.model);
+  const flag = d ? orZero(d[15]) : 0;
+  const mo = MONTHS.indexOf(sh.month) + 1;
+  const dl = i => d ? orZero(d[i]) : 0;
+  const lm = i => m ? orZero(m[i]) : 0;
+  const total = num(row.total), Y = r2(total / 1.16), Z = r2(total - Y);
+  const K = S.consts, c = {};
+  const put = (L, v, f) => { c[L] = { v, f: f || null }; };
+  const fac = numOrStr(row.fac);
+  put('A', `BMX-${flag}-${sh.year}-${mo}-${row.fac}`, `"BMX-"&$C$1&"-${sh.year}-"&$C$2&"-"&B${r}`);
+  put('B', fac);
+  'CDEFGHIJKLMNOP'.split('').forEach((L, k) => put(L, dl(1 + k), `IFERROR(VLOOKUP($B$1,'DEALER LIST'!$A:$O,${L}$4,0),0)`));
+  put('Q', `Fecha de pedimento ${row.pedDate}`, `+"Fecha de pedimento "&AR${r}`);
+  put('R', numOrStr(K.claveProd));
+  const AG = lm(1), AJ = lm(2), AK = lm(3), AL = lm(4), AQ = lm(5);
+  const bn = brand === 'baic' ? 'BAIC' : 'Arcfox';
+  let sv, sf;
+  if (brand === 'baic') {
+    sv = `${AG} Marca ${bn} ${row.model} modelo ${row.year} motor ${AJ} ${AK} transmisión ${AL} color ${row.color} interior ${row.int} VIN ${row.vin} Número de motor ${row.eng} clave vehicular ${AQ}`;
+    sf = `AG${r}&" Marca BAIC "&AH${r}&" modelo "&AI${r}&" motor "&AJ${r}&" "&AK${r}&" transmisión "&AL${r}&" color "&AM${r}&" interior "&AN${r}&" VIN "&AO${r}&" Número de motor "&AP${r}&" clave vehicular "&AQ${r}`;
+  } else {
+    sv = `${AG} Marca ${bn} ${row.model} modelo ${row.year} motor ${AJ} ${AK} color ${row.color} interior ${row.int} VIN ${row.vin} Número de motor ${row.eng} clave vehicular ${AQ}`;
+    sf = `AG${r}&" Marca Arcfox "&AH${r}&" modelo "&AI${r}&" motor "&AJ${r}&" "&AK${r}&" color "&AM${r}&" interior "&AN${r}&" VIN "&AO${r}&" Número de motor "&AP${r}&" clave vehicular "&AQ${r}`;
+  }
+  put('S', sv, sf);
+  put('T', K.claveUnidad); put('U', K.unidad); put('V', numOrStr(K.cantidad));
+  put('W', Y, `+Y${r}`);
+  put('X', numOrStr(K.objetoImp));
+  put('Y', Y, `ROUND(AA${r}/1.16,2)`);
+  put('Z', Z, brand === 'baic' ? `+AA${r}-Y${r}` : `ROUND(AA${r}-Y${r},2)`);
+  put('AA', String(row.total).trim() === '' ? '' : total);
+  put('AB', row.ped);
+  put('AC', row.pedido); put('AD', row.mail); put('AE', row.facturado); put('AF', row.errores);
+  const lf = (col) => `+IFERROR(VLOOKUP($AH${r},LIST!$D$1:$I$${nm + 1},${col}$4,0),0)`;
+  put('AG', AG, lf('AG'));
+  put('AH', row.model);
+  put('AI', numOrStr(row.year));
+  put('AJ', AJ, lf('AJ')); put('AK', AK, lf('AK')); put('AL', AL, lf('AL'));
+  put('AM', row.color); put('AN', row.int); put('AO', row.vin); put('AP', row.eng);
+  put('AQ', AQ, lf('AQ'));
+  put('AR', row.pedDate);
+  put('AS', row.demo);
+  return c;
+}
+
+/* Columnas A..AF: exactamente las que trae el CSV de referencia (sin las columnas
+   auxiliares AG..AS, que solo existen para armar el Concepto y no se exportan). */
+const CSV_COLS = FULL.slice(0, 32);
+
+function csvField(v) {
+  const s = String(v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function csvValue(v) {
+  if (v === '' || v == null) return '';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2);
+  return String(v);
+}
+function fileSafe(s) {
+  return String(s == null ? '' : s).trim().replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'SIN-DATO';
+}
+/* El CSV de referencia usa codificación de un byte (Windows-1252); para acentos y
+   ñ coincide con Latin-1, así que basta mapear cada carácter a su código. */
+function toLatin1Bytes(str) {
+  const buf = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); buf[i] = c <= 255 ? c : 63; }
+  return buf;
+}
+
+/* Agrupa las filas capturadas de una hoja (BAIC o Arcfox) por modelo: cada grupo
+   se exporta como un CSV separado, igual que DEALER_UNIDADES_MODELO.csv. */
+function buildCsvGroups(brand) {
+  const sh = S.sheets[brand], rows = sh.rows.filter(isUsed), nm = S.models.length;
+  const order = [], byModel = {};
+  rows.forEach(row => {
+    const key = String(row.model || '').trim() || 'SIN MODELO';
+    if (!byModel[key]) { byModel[key] = []; order.push(key); }
+    byModel[key].push(row);
+  });
+  const dealerCode = String(sh.customer || '').trim() || 'CLIENTE';
+  return order.map(model => {
+    const grows = byModel[model];
+    const header = CSV_COLS.map(c => csvField(c.h)).join(',');
+    const lines = grows.map((row, i) => {
+      const cells = cellsFor(brand, sh, row, 6 + i, nm);
+      return CSV_COLS.map(({ L }) => csvField(csvValue(cells[L].v))).join(',');
+    });
+    return {
+      filename: `${fileSafe(dealerCode)}_${grows.length}_${fileSafe(model)}.csv`,
+      count: grows.length,
+      text: [header].concat(lines).join('\r\n') + '\r\n'
+    };
+  });
+}
+/* ==== CORE END ==== */
+
+/* ---------- UI ---------- */
+const ui = { tab: 'bill', brand: 'baic', opt: false, confirm: null };
+function setBrand(b) {
+  ui.brand = b;
+  document.querySelectorAll('#brandSeg button, #prevSeg button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.brand === b)));
+  if (ui.tab === 'bill') { renderBillHead(); renderGrid(); }
+  else if (ui.tab === 'prev') { renderPrev(); }
+}
+const INPUT_COLS = [
+  { k:'fac', h:'No. Factura', w:96, num:true },
+  { k:'model', h:'Modelo', w:120 },
+  { k:'year', h:'Año', w:74, num:true },
+  { k:'color', h:'Color', w:150 },
+  { k:'int', h:'Interior', w:100 },
+  { k:'vin', h:'VIN', w:190, mono:true },
+  { k:'eng', h:'No. de motor', w:160, mono:true },
+  { k:'ped', h:'Pedimento', w:190, mono:true },
+  { k:'pedDate', h:'Fecha de pedimento', w:150, mono:true },
+  { k:'total', h:'Total con IVA', w:130, num:true }
+];
+const OPT_COLS = [
+  { k:'pedido', h:'Pedido', w:110 }, { k:'mail', h:'Mail', w:160 }, { k:'facturado', h:'Facturado', w:100 },
+  { k:'errores', h:'Errores', w:130 }, { k:'demo', h:'Demo', w:90 }
+];
+const $ = (s, r = document) => r.querySelector(s);
+const cur = () => S.sheets[ui.brand];
+const fmt = n => Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const inputCols = () => ui.opt ? INPUT_COLS.concat(OPT_COLS) : INPUT_COLS;
+
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200); }
+function setStatus(t) { $('#status').textContent = t; }
+
+function validState(o) { return o && o.dealers && o.models && o.alloc && o.consts && o.sheets && o.sheets.baic && o.sheets.arcfox; }
+function load() { try { const t = localStorage.getItem(STORE_KEY); if (t) { const o = JSON.parse(t); if (validState(o)) return o; } } catch (e) {} return null; }
+let saveT;
+function save() {
+  setStatus('Guardando…');
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); setStatus('Guardado en este dispositivo'); }
+    catch (e) { setStatus('No se pudo guardar aquí. Descarga un respaldo.'); }
+  }, 250);
+}
+function padRows(sh) { while (sh.rows.length < 8) sh.rows.push(blankRow()); }
+
+function parseClip(t) {
+  const lines = t.replace(/\r/g, '').split('\n');
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+  return lines.map(l => l.split('\t').map(x => x.trim()));
+}
+
+/* ----- Consecutivo de facturas (por dealer y mes) ----- */
+const FAC_RE = /^\d+$/;
+const ctr = { m: null, y: null };
+function ctrKey(sh) {
+  const code = String(sh.customer || '').trim().toUpperCase(), y = String(sh.year || '').trim(), mo = MONTHS.indexOf(sh.month) + 1;
+  return (code && /^\d{4}$/.test(y) && mo) ? `${code}|${y}|${mo}` : '';
+}
+const lastNum = sh => { const k = ctrKey(sh); return k ? (S.counters[k] || 0) : 0; };
+const nextNum = sh => lastNum(sh) + 1;
+function setCounter(key, n) { if (!key) return; if (n > 0) S.counters[key] = n; else delete S.counters[key]; }
+function bumpFac(sh, v) {
+  const k = ctrKey(sh), t = String(v == null ? '' : v).trim();
+  if (!k || !FAC_RE.test(t)) return;
+  const n = parseInt(t, 10); if (n > (S.counters[k] || 0)) S.counters[k] = n;
+}
+function bumpFromSheet(sh) { sh.rows.forEach(r => { if (isUsed(r)) bumpFac(sh, r.fac); }); }
+function ensureCounters() {
+  if (!S.counters || typeof S.counters !== 'object') { S.counters = {}; Object.values(S.sheets).forEach(bumpFromSheet); }
+}
+/* Asigna el siguiente número a cada fila con datos y sin factura, y guarda el último asignado. */
+function autoNumber(sh) {
+  const k = ctrKey(sh); if (!k) return 0;
+  let n = (S.counters[k] || 0) + 1, c = 0;
+  sh.rows.forEach(r => {
+    if (!isUsed(r) || String(r.fac).trim() !== '') return;
+    r.fac = String(n); S.counters[k] = n; n++; c++;
+  });
+  return c;
+}
+function paintCounter() {
+  const sh = cur(), k = ctrKey(sh), li = $('#lastNum');
+  li.disabled = !k;
+  if (document.activeElement !== li) li.value = k ? String(S.counters[k] || 0) : '';
+  $('#nextNum').textContent = k ? String(nextNum(sh)) : '—';
+  $('#autoNum').checked = S.autoNum !== false;
+}
+function syncFacInputs() {
+  const sh = cur();
+  sh.rows.forEach((r, i) => { const inp = $(`#grid input[data-i="${i}"][data-k="fac"]`); if (inp && inp.value !== String(r.fac)) inp.value = r.fac; });
+  for (let j = 0; j < sh.rows.length; j++) paintRow(j);
+  paintTotals(); paintCounter();
+}
+function periodChanged(announce) {
+  const sh = cur(); paintWho();
+  if (S.autoNum !== false) autoNumber(sh);
+  renderGrid(); paintCounter(); renderCounters(); save();
+  if (announce && ctrKey(sh)) toast(`${sh.customer} · ${sh.month} ${sh.year}: siguiente No. de factura ${nextNum(sh)}`);
+}
+function renderCounters() {
+  const sh = cur();
+  if (ctr.m == null) {
+    ctr.m = MONTHS.includes(sh.month) ? sh.month : MONTHS[new Date().getMonth()];
+    ctr.y = /^\d{4}$/.test(String(sh.year).trim()) ? String(sh.year).trim() : String(new Date().getFullYear());
+  }
+  $('#ctrMonth').innerHTML = MONTHS.map(m => `<option ${m === ctr.m ? 'selected' : ''}>${m}</option>`).join('');
+  if (document.activeElement !== $('#ctrYear')) $('#ctrYear').value = ctr.y;
+  const mo = MONTHS.indexOf(ctr.m) + 1, ok = /^\d{4}$/.test(ctr.y);
+  let h = '<div class="gridwrap"><table class="grid"><thead><tr><th class="in">Dealer</th><th class="in">Cliente</th><th class="in" style="min-width:150px">Último No. asignado</th><th class="calc">Siguiente folio</th></tr></thead><tbody>';
+  if (!S.dealers.length) h += '<tr><td colspan="4" class="empty">Aún no hay dealers. Agrégalos en la pestaña Dealers.</td></tr>';
+  S.dealers.forEach(d => {
+    const code = String(d[0]), key = ok ? `${code.trim().toUpperCase()}|${ctr.y}|${mo}` : '';
+    const last = key ? (S.counters[key] || 0) : 0, pre = `BMX-${orZero(d[15])}-${ctr.y}-${mo}-`;
+    h += `<tr><td class="calc mono">${esc(code)}</td><td class="calc">${esc(d[1])}</td>` +
+      `<td class="inc"><input class="num" inputmode="numeric" data-ck="${esc(key)}" data-pre="${esc(pre)}" value="${last || ''}" placeholder="0" ${ok ? '' : 'disabled'} autocomplete="off" aria-label="Último No. asignado de ${esc(code)}"></td>` +
+      `<td class="calc mono" data-nf>${ok ? esc(pre + (last + 1)) : ''}</td></tr>`;
+  });
+  $('#ctrHost').innerHTML = h + '</tbody></table></div>';
+}
+function setupCounters() {
+  $('#ctrMonth').addEventListener('change', e => { ctr.m = e.target.value; renderCounters(); });
+  $('#ctrYear').addEventListener('input', e => { ctr.y = e.target.value.trim(); renderCounters(); });
+  $('#ctrHost').addEventListener('input', e => {
+    const t = e.target; if (t.dataset.ck === undefined) return;
+    if (/\D/.test(t.value)) t.value = t.value.replace(/\D/g, '');
+    if (!t.dataset.ck) return;
+    const n = t.value === '' ? 0 : parseInt(t.value, 10);
+    setCounter(t.dataset.ck, n);
+    t.closest('tr').querySelector('[data-nf]').textContent = t.dataset.pre + (n + 1);
+    paintCounter(); save();
+  });
+}
+
+/* ----- Facturación ----- */
+function renderBillHead() {
+  const cust = $('#cust'), sh = cur();
+  const codes = S.dealers.map(d => String(d[0]));
+  if (sh.customer && !codes.includes(sh.customer)) codes.push(sh.customer);
+  cust.innerHTML = codes.map(c => `<option ${c === sh.customer ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  $('#month').innerHTML = MONTHS.map(m => `<option ${m === sh.month ? 'selected' : ''}>${m}</option>`).join('');
+  $('#year').value = sh.year;
+  $('#modelList').innerHTML = S.models.map(m => `<option value="${esc(m[0])}"></option>`).join('');
+  $('#brandSeg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.brand === ui.brand)));
+  paintWho(); paintCounter();
+}
+function paintWho() {
+  const sh = cur(), d = dealerBy(sh.customer);
+  $('#who').innerHTML = d ? `<b>${esc(d[1])}</b>, RFC ${esc(d[2])}. Folio: BMX-${esc(orZero(d[15]))}-${esc(sh.year)}-${MONTHS.indexOf(sh.month) + 1}-<i>factura</i>`
+    : 'Ese código no está en la pestaña Dealers; los datos fiscales saldrán en 0.';
+}
+function renderGrid() {
+  const sh = cur(); padRows(sh);
+  const cols = inputCols();
+  let h = `<thead><tr class="grp"><th class="g-blank"></th><th class="g-in" colspan="${cols.length}">Lo que capturas</th><th class="g-calc" colspan="4">Se calcula solo</th><th class="g-blank"></th></tr>`;
+  h += `<tr class="h2"><th class="n">#</th>` + cols.map(c => `<th class="in" style="min-width:${c.w}px">${esc(c.h)}</th>`).join('') +
+    `<th class="calc">Folio</th><th class="calc">Subtotal</th><th class="calc">IVA</th><th class="calc">Concepto</th><th class="g-blank"></th></tr></thead><tbody>`;
+  sh.rows.forEach((row, i) => {
+    h += `<tr data-i="${i}"><td class="n">${i + 1}</td>` + cols.map(c =>
+      `<td class="inc"><input data-i="${i}" data-k="${c.k}" ${c.k === 'model' ? 'list="modelList"' : ''} class="${c.mono ? 'mono ' : ''}${c.num ? 'num' : ''}" value="${esc(row[c.k])}" autocomplete="off" spellcheck="false" aria-label="${esc(c.h)}, fila ${i + 1}"></td>`).join('') +
+      `<td class="calc mono" data-c="A"></td><td class="calc num" data-c="Y"></td><td class="calc num" data-c="Z"></td><td class="calc wide" data-c="S"></td>` +
+      `<td><button class="x" type="button" data-del="${i}" aria-label="Eliminar fila ${i + 1}">×</button></td></tr>`;
+  });
+  $('#grid').innerHTML = h + '</tbody>';
+  for (let i = 0; i < sh.rows.length; i++) paintRow(i);
+  paintTotals();
+  renderModelTotals();
+}
+function paintRow(i) {
+  const sh = cur(), row = sh.rows[i], tr = $(`#grid tr[data-i="${i}"]`);
+  if (!tr) return;
+  const used = isUsed(row);
+  tr.classList.toggle('blank', !used);
+  const setc = (L, t, title) => { const td = tr.querySelector(`[data-c="${L}"]`); td.textContent = t; td.title = title || ''; };
+  if (used) {
+    const c = cellsFor(ui.brand, sh, row, 6 + i, S.models.length);
+    setc('A', c.A.v); setc('Y', fmt(c.Y.v)); setc('Z', fmt(c.Z.v)); setc('S', c.S.v, c.S.v);
+  } else { setc('A', ''); setc('Y', ''); setc('Z', ''); setc('S', ''); }
+  const mIn = tr.querySelector('input[data-k="model"]'), vIn = tr.querySelector('input[data-k="vin"]');
+  const badM = String(row.model).trim() !== '' && !modelBy(row.model);
+  mIn.classList.toggle('warn', badM); mIn.title = badM ? 'Este modelo no está en la pestaña Modelos' : '';
+  const vin = String(row.vin).trim();
+  const dup = vin !== '' && sh.rows.some((r, j) => j !== i && String(r.vin).trim().toUpperCase() === vin.toUpperCase());
+  const badV = vin !== '' && (vin.length !== 17 || dup);
+  vIn.classList.toggle('warn', badV); vIn.title = badV ? (dup ? 'VIN repetido en esta hoja' : 'El VIN debe tener 17 caracteres') : '';
+  const fIn = tr.querySelector('input[data-k="fac"]'), fac = String(row.fac).trim();
+  const dupF = fac !== '' && sh.rows.some((r, j) => j !== i && String(r.fac).trim() === fac);
+  fIn.classList.toggle('warn', dupF); fIn.title = dupF ? 'No. de factura repetido en esta hoja' : '';
+}
+function paintTotals() {
+  const sh = cur(); let n = 0, sub = 0, iva = 0, tot = 0;
+  sh.rows.forEach(r => { if (!isUsed(r)) return; n++; const t = num(r.total), y = r2(t / 1.16); tot += t; sub += y; iva += r2(t - y); });
+  $('#totals').innerHTML = `<div><span>Unidades</span><strong>${n}</strong></div><div><span>Subtotal</span><strong>${fmt(sub)}</strong></div><div><span>IVA</span><strong>${fmt(iva)}</strong></div><div><span>Total</span><strong>${fmt(tot)}</strong></div>`;
+}
+function ensureModelTotals(sh) { if (!sh.modelTotals) sh.modelTotals = {}; return sh.modelTotals; }
+function renderModelTotals() {
+  const sh = cur(); ensureModelTotals(sh);
+  const order = [], counts = {}, missing = {};
+  sh.rows.forEach(r => {
+    if (!isUsed(r)) return;
+    const m = String(r.model || '').trim(); if (!m) return;
+    if (!(m in counts)) { counts[m] = 0; missing[m] = 0; order.push(m); }
+    counts[m]++;
+    if (String(r.total).trim() === '') missing[m]++;
+  });
+  const body = $('#modelTotalsBox .mt-body');
+  if (!order.length) { body.innerHTML = '<p class="hint" style="margin:0">Aún no hay modelos capturados en esta hoja.</p>'; return; }
+  let h = '<div class="gridwrap"><table class="grid"><thead><tr><th class="in">Modelo</th><th class="in">Unidades</th><th class="in">Sin Total</th><th class="in" style="min-width:150px">Total con IVA</th><th class="g-blank"></th></tr></thead><tbody>';
+  order.forEach(m => {
+    h += `<tr><td class="calc">${esc(m)}</td><td class="calc num">${counts[m]}</td><td class="calc num">${missing[m]}</td>` +
+      `<td class="inc"><input data-mt="${esc(m)}" class="num" inputmode="decimal" value="${esc(sh.modelTotals[m] || '')}" aria-label="Total con IVA para el modelo ${esc(m)}"></td>` +
+      `<td><button class="btn sm" type="button" data-apply="${esc(m)}">Aplicar</button></td></tr>`;
+  });
+  $('#modelTotalsBox .mt-body').innerHTML = h + '</tbody></table></div>';
+}
+function applyModelTotal(model) {
+  const sh = cur(), val = String(ensureModelTotals(sh)[model] || '').trim();
+  if (val === '') { toast('Escribe un total antes de aplicarlo'); return; }
+  const onlyEmpty = $('#mtOnlyEmpty').checked;
+  let n = 0;
+  sh.rows.forEach(r => {
+    if (!isUsed(r)) return;
+    if (String(r.model || '').trim() !== model) return;
+    if (onlyEmpty && String(r.total).trim() !== '') return;
+    r.total = val; n++;
+  });
+  renderGrid(); save();
+  toast(n ? `Se aplicó el total a ${n} fila${n === 1 ? '' : 's'} de ${model}` : `No había filas de ${model} para actualizar`);
+}
+function renderFixed() {
+  const K = S.consts, defs = [['claveProd','ClaveProdServ'],['claveUnidad','ClaveUnidad'],['unidad','Unidad'],['cantidad','Cantidad'],['objetoImp','Objeto Impuesto']];
+  $('#fixedGrid').innerHTML = defs.map(([k, l]) => `<label>${l}<input data-const="${k}" value="${esc(K[k])}"></label>`).join('');
+}
+
+function setupBilling() {
+  const grid = $('#grid');
+  grid.addEventListener('input', e => {
+    const t = e.target; if (!t.dataset.k) return;
+    const i = +t.dataset.i; cur().rows[i][t.dataset.k] = t.value;
+    for (let j = 0; j < cur().rows.length; j++) paintRow(j);
+    paintTotals(); if (t.dataset.k === 'model' || t.dataset.k === 'total') renderModelTotals(); save();
+  });
+  grid.addEventListener('change', e => {
+    const t = e.target; if (!t.dataset.k) return;
+    const sh = cur(), i = +t.dataset.i;
+    const v = t.value.trim(); if (v !== t.value) { t.value = v; sh.rows[i][t.dataset.k] = v; }
+    if (t.dataset.k === 'fac') bumpFac(sh, sh.rows[i].fac);
+    else if (S.autoNum !== false && isUsed(sh.rows[i])) autoNumber(sh);
+    syncFacInputs();
+    if (t.dataset.k === 'model' || t.dataset.k === 'total') renderModelTotals(); save();
+  });
+  grid.addEventListener('paste', e => {
+    const t = e.target; if (!t.dataset.k) return;
+    const txt = (e.clipboardData || window.clipboardData).getData('text');
+    if (!/[\t\n]/.test(txt.replace(/\n+$/, ''))) return;
+    e.preventDefault();
+    const m = parseClip(txt), cols = inputCols(), sh = cur();
+    const r0 = +t.dataset.i, c0 = cols.findIndex(c => c.k === t.dataset.k);
+    m.forEach((cells, di) => {
+      while (sh.rows.length <= r0 + di) sh.rows.push(blankRow());
+      cells.forEach((v, dj) => { const col = cols[c0 + dj]; if (col) sh.rows[r0 + di][col.k] = v; });
+    });
+    for (let di = 0; di < m.length; di++) bumpFac(sh, sh.rows[r0 + di].fac);
+    if (S.autoNum !== false) autoNumber(sh);
+    renderGrid(); paintCounter(); save();
+    const f = $(`#grid input[data-i="${r0}"][data-k="${t.dataset.k}"]`); if (f) f.focus();
+    toast(`Se pegaron ${m.length} fila${m.length === 1 ? '' : 's'}`);
+  });
+  grid.addEventListener('keydown', e => {
+    const t = e.target; if (e.key !== 'Enter' || !t.dataset.k) return;
+    e.preventDefault();
+    const sh = cur(), i = +t.dataset.i + (e.shiftKey ? -1 : 1);
+    if (i < 0) return;
+    if (i >= sh.rows.length) { sh.rows.push(blankRow()); renderGrid(); }
+    const f = $(`#grid input[data-i="${i}"][data-k="${t.dataset.k}"]`); if (f) f.focus();
+  });
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    cur().rows.splice(+b.dataset.del, 1); renderGrid(); save();
+  });
+  $('#cust').addEventListener('change', e => { cur().customer = e.target.value; periodChanged(true); });
+  $('#month').addEventListener('change', e => { cur().month = e.target.value; periodChanged(true); });
+  $('#year').addEventListener('input', e => { cur().year = e.target.value.trim(); paintWho(); for (let j = 0; j < cur().rows.length; j++) paintRow(j); paintCounter(); save(); });
+  $('#year').addEventListener('change', () => periodChanged(true));
+  $('#brandSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; setBrand(b.dataset.brand); });
+  $('#optCols').addEventListener('change', e => { ui.opt = e.target.checked; renderGrid(); });
+  $('#btnAddRow').addEventListener('click', () => { cur().rows.push(blankRow()); renderGrid(); save(); });
+  $('#btnNum').addEventListener('click', () => {
+    const sh = cur();
+    if (!ctrKey(sh)) { toast('Elige dealer, mes y un año de 4 dígitos'); return; }
+    const k = autoNumber(sh);
+    syncFacInputs(); renderCounters(); save();
+    toast(k ? `Se numeraron ${k} fila${k === 1 ? '' : 's'}; último No. de factura ${lastNum(sh)}` : 'No hay filas sin número de factura');
+  });
+  $('#lastNum').addEventListener('input', e => {
+    const t = e.target; if (/\D/.test(t.value)) t.value = t.value.replace(/\D/g, '');
+    const sh = cur(), k = ctrKey(sh); if (!k) return;
+    setCounter(k, t.value === '' ? 0 : parseInt(t.value, 10));
+    $('#nextNum').textContent = String(nextNum(sh)); renderCounters(); save();
+  });
+  $('#lastNum').addEventListener('change', paintCounter);
+  $('#autoNum').addEventListener('change', e => {
+    S.autoNum = e.target.checked; save();
+    if (S.autoNum && autoNumber(cur())) { syncFacInputs(); renderCounters(); toast('Se numeraron las filas que no tenían factura'); }
+  });
+  $('#btnClear').addEventListener('click', e => confirmTwice(e.target, 'clear', 'Confirmar: vaciar', () => { cur().rows = []; renderGrid(); save(); toast('Hoja vaciada'); }));
+  $('#fixedGrid').addEventListener('input', e => { const k = e.target.dataset.const; if (!k) return; S.consts[k] = e.target.value; for (let j = 0; j < cur().rows.length; j++) paintRow(j); save(); });
+  $('#modelTotalsBox').addEventListener('input', e => {
+    const m = e.target.dataset.mt; if (m === undefined) return;
+    ensureModelTotals(cur())[m] = e.target.value; save();
+  });
+  $('#modelTotalsBox').addEventListener('click', e => {
+    const b = e.target.closest('[data-apply]'); if (!b) return;
+    applyModelTotal(b.dataset.apply);
+  });
+}
+function confirmTwice(btn, id, label, fn) {
+  if (ui.confirm && ui.confirm.id === id) { clearTimeout(ui.confirm.t); btn.textContent = ui.confirm.orig; ui.confirm = null; fn(); return; }
+  const orig = btn.textContent; btn.textContent = label;
+  ui.confirm = { id, orig, t: setTimeout(() => { btn.textContent = orig; ui.confirm = null; }, 4000) };
+}
+
+/* ----- Tablas editables (Asignación, Dealers, Modelos) ----- */
+function editable(host, cfg) {
+  const rows = cfg.rows();
+  let h = '<div class="gridwrap"><table class="grid"><thead><tr>' + (cfg.select ? '<th class="n"><input type="checkbox" data-all aria-label="Marcar todas"></th>' : '<th class="n">#</th>') +
+    cfg.headers.map(x => `<th class="in">${esc(x)}</th>`).join('') + '<th class="g-blank"></th></tr></thead><tbody>';
+  if (!rows.length) h += `<tr><td colspan="${cfg.headers.length + 2}" class="empty">Aún no hay filas. Pega desde Excel en el cuadro de abajo o agrega una fila.</td></tr>`;
+  rows.forEach((r, i) => {
+    h += '<tr>' + (cfg.select ? `<td class="n"><input type="checkbox" data-sel="${i}" ${cfg.select.get(i) ? 'checked' : ''} aria-label="Marcar fila ${i + 1}"></td>` : `<td class="n">${i + 1}</td>`) +
+      cfg.headers.map((_, j) => `<td class="inc"><input data-i="${i}" data-j="${j}" value="${esc(r[j])}" autocomplete="off" spellcheck="false" class="${(cfg.mono || []).includes(j) ? 'mono' : ''}" aria-label="${esc(cfg.headers[j])}, fila ${i + 1}"></td>`).join('') +
+      `<td><button class="x" type="button" data-del="${i}" aria-label="Eliminar fila ${i + 1}">×</button></td></tr>`;
+  });
+  h += '</tbody></table></div><div class="rowtools"><button class="btn sm" type="button" data-add>Agregar fila</button>' +
+    (cfg.onClear ? `<button class="btn sm danger" type="button" data-clear>${esc(cfg.clearLabel || 'Vaciar todo')}</button>` : '') + '</div>' +
+    `<details class="box"><summary>Pegar filas desde Excel</summary><textarea placeholder="Copia las celdas en Excel y pégalas aquí (con o sin encabezados)" data-paste></textarea><button class="btn primary sm" type="button" data-append>Agregar filas pegadas</button></details>`;
+  host.innerHTML = h;
+  host.oninput = e => { const t = e.target; if (t.dataset.j === undefined) return; cfg.onEdit(+t.dataset.i, +t.dataset.j, t.value); };
+  host.onchange = e => {
+    const t = e.target;
+    if (t.dataset.sel !== undefined) { cfg.select.set(+t.dataset.sel, t.checked); return; }
+    if (t.dataset.all !== undefined) { rows.forEach((_, i) => cfg.select.set(i, t.checked)); host.querySelectorAll('[data-sel]').forEach(c => c.checked = t.checked); }
+  };
+  host.onclick = e => {
+    const d = e.target.closest('[data-del]'); if (d) { cfg.onDel(+d.dataset.del); return; }
+    if (e.target.closest('[data-add]')) { cfg.onAdd(); return; }
+    const c = e.target.closest('[data-clear]');
+    if (c && cfg.onClear) { confirmTwice(c, 'clear-' + (cfg.clearLabel || ''), 'Confirmar: vaciar', cfg.onClear); return; }
+    if (e.target.closest('[data-append]')) {
+      const ta = host.querySelector('[data-paste]'); const m = parseClip(ta.value);
+      if (!m.length) { toast('Pega primero las celdas copiadas'); return; }
+      cfg.onAppend(m);
+    }
+  };
+  host.onpaste = e => {
+    const t = e.target; if (t.dataset.j === undefined) return;
+    const txt = (e.clipboardData || window.clipboardData).getData('text');
+    if (!/[\t\n]/.test(txt.replace(/\n+$/, ''))) return;
+    e.preventDefault(); cfg.onPaste(parseClip(txt), +t.dataset.i, +t.dataset.j);
+  };
+}
+const pad = (arr, n) => { const a = arr.slice(0, n); while (a.length < n) a.push(''); return a; };
+
+function renderAlloc() {
+  editable($('#allocHost'), {
+    headers: ALLOC_HEADERS, mono: [1, 3, 4], rows: () => S.alloc.map(a => a.v),
+    select: { get: i => S.alloc[i].sel, set: (i, b) => { S.alloc[i].sel = b; save(); } },
+    onEdit: (i, j, v) => { S.alloc[i].v[j] = v; save(); },
+    onAdd: () => { S.alloc.push({ v: pad([], 16), sel: true }); renderAlloc(); save(); },
+    onDel: i => { S.alloc.splice(i, 1); renderAlloc(); save(); },
+    onClear: () => { S.alloc = []; renderAlloc(); save(); toast('Se vació la Asignación'); },
+    clearLabel: 'Vaciar Asignación',
+    onPaste: (m, i0, j0) => { m.forEach((cells, di) => { while (S.alloc.length <= i0 + di) S.alloc.push({ v: pad([], 16), sel: true }); cells.forEach((v, dj) => { if (j0 + dj < 16) S.alloc[i0 + di].v[j0 + dj] = v; }); }); renderAlloc(); save(); },
+    onAppend: m => {
+      if (/^(#|pedimento)$/i.test(m[0][0]) || /^pedimento$/i.test(m[0][1] || '')) m = m.slice(1);
+      m.forEach(r => S.alloc.push({ v: pad(r, 16), sel: true })); renderAlloc(); save(); toast(`Se agregaron ${m.length} fila${m.length === 1 ? '' : 's'}`);
+    }
+  });
+}
+function renderDealers() {
+  const norm = (j, v) => (j === 3 || j === 7 || j === 11) ? numOrStr(v) : v;
+  editable($('#dealersHost'), {
+    headers: DEALER_HEADERS, mono: [2], rows: () => S.dealers,
+    onEdit: (i, j, v) => { S.dealers[i][j] = norm(j, v); save(); },
+    onAdd: () => { S.dealers.push(pad([], 16)); renderDealers(); save(); },
+    onDel: i => { S.dealers.splice(i, 1); renderDealers(); renderBillHead(); save(); },
+    onPaste: (m, i0, j0) => { m.forEach((cells, di) => { while (S.dealers.length <= i0 + di) S.dealers.push(pad([], 16)); cells.forEach((v, dj) => { if (j0 + dj < 16) S.dealers[i0 + di][j0 + dj] = norm(j0 + dj, v); }); }); renderDealers(); save(); },
+    onAppend: m => {
+      if (/^dealer$/i.test(m[0][0])) m = m.slice(1);
+      m.forEach(r => S.dealers.push(pad(r, 16).map((v, j) => norm(j, v)))); renderDealers(); renderBillHead(); save(); toast(`Se agregaron ${m.length} dealer${m.length === 1 ? '' : 's'}`);
+    }
+  });
+}
+function renderModels() {
+  editable($('#modelsHost'), {
+    headers: MODEL_HEADERS, mono: [5], rows: () => S.models,
+    onEdit: (i, j, v) => { S.models[i][j] = v.trim(); save(); },
+    onAdd: () => { S.models.push(pad([], 6)); renderModels(); save(); },
+    onDel: i => { S.models.splice(i, 1); renderModels(); renderBillHead(); save(); },
+    onPaste: (m, i0, j0) => { m.forEach((cells, di) => { while (S.models.length <= i0 + di) S.models.push(pad([], 6)); cells.forEach((v, dj) => { if (j0 + dj < 6) S.models[i0 + di][j0 + dj] = v; }); }); renderModels(); renderBillHead(); save(); },
+    onAppend: m => {
+      if (/^(model|modelo)$/i.test(m[0][0])) m = m.slice(1);
+      m.forEach(r => S.models.push(pad(r, 6))); renderModels(); renderBillHead(); save(); toast(`Se agregaron ${m.length} modelo${m.length === 1 ? '' : 's'}`);
+    }
+  });
+}
+
+/* ----- Asignación → Facturación ----- */
+function normHeader(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' '); }
+const ALLOC_HEADER_NORM = ALLOC_HEADERS.map(normHeader);
+
+async function handleAllocFile(file) {
+  if (typeof XLSX === 'undefined') { toast('No se pudo cargar el lector de Excel; revisa tu conexión'); return; }
+  let rows;
+  try {
+    if (/\.(csv|txt)$/i.test(file.name)) {
+      const text = await file.text();
+      const wb = XLSX.read(text, { type: 'string' });
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' });
+    } else {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const name = wb.SheetNames.find(n => /alloc/i.test(n)) || wb.SheetNames[0];
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: '' });
+    }
+  } catch (e) { toast('No se pudo leer ese archivo'); return; }
+  rows = (rows || []).filter(r => r.some(c => String(c == null ? '' : c).trim() !== ''));
+  if (!rows.length) { toast('El archivo está vacío'); return; }
+  const head = rows[0].map(normHeader);
+  const idx = ALLOC_HEADER_NORM.map(h => head.indexOf(h));
+  if (idx.filter(i => i >= 0).length < 3) { toast('No se reconocen los encabezados; deben ser iguales a los de la hoja ALLOCATION'); return; }
+  let added = 0;
+  rows.slice(1).forEach(r => {
+    const v = idx.map(i => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '');
+    if (!v.some(x => x !== '')) return;
+    S.alloc.push({ v: pad(v, 16), sel: true });
+    added++;
+  });
+  if (!added) { toast('No se encontraron filas con datos'); return; }
+  renderAlloc(); save();
+  const missing = ALLOC_HEADERS.filter((h, i) => idx[i] < 0);
+  toast(`Se cargaron ${added} fila${added === 1 ? '' : 's'}${missing.length ? `; no se encontró la columna "${missing[0]}"${missing.length > 1 ? ' y otras' : ''}` : ''}`);
+}
+
+function splitPed(s) {
+  const m = String(s == null ? '' : s).match(/^\s*(.*?)\s*(\([^)]*\))?\s*$/);
+  return { ped: (m[1] || '').replace(/[\s-]+/g, '-'), date: m[2] || '' };
+}
+function sendAlloc() {
+  const brand = $('#allocTarget').value, sh = S.sheets[brand];
+  const have = new Set(sh.rows.map(r => String(r.vin).trim().toUpperCase()).filter(Boolean));
+  let added = 0, dup = 0;
+  S.alloc.forEach(a => {
+    if (!a.sel) return;
+    const v = a.v, vin = String(v[3]).trim();
+    if (!vin) return;
+    if (have.has(vin.toUpperCase())) { dup++; return; }
+    const { ped, date } = splitPed(v[1]);
+    const row = blankRow();
+    Object.assign(row, { model: String(v[2]).trim(), vin, eng: String(v[4]).trim(), color: String(v[7]).trim(), int: String(v[8]).trim(), year: String(v[9]).trim(), ped, pedDate: date });
+    const idx = sh.rows.findIndex(r => !isUsed(r));
+    if (idx >= 0) sh.rows[idx] = row; else sh.rows.push(row);
+    have.add(vin.toUpperCase()); added++;
+  });
+  const from = nextNum(sh); let nums = 0;
+  if (added && S.autoNum !== false) nums = autoNumber(sh);
+  save();
+  const rng = nums ? (lastNum(sh) === from ? `; No. de factura ${from}` : `; No. de factura ${from} al ${lastNum(sh)}`) : '';
+  toast(added || dup ? `Se pasaron ${added} unidad${added === 1 ? '' : 'es'} a ${brand === 'baic' ? 'BAIC' : 'Arcfox'}${dup ? `; ${dup} ya estaban` : ''}${rng}` : 'No hay unidades marcadas con VIN');
+  if (added) { ui.brand = brand; renderBillHead(); renderGrid(); showTab('bill'); }
+}
+
+/* ----- Vista previa ----- */
+function renderPrev() {
+  const brand = ui.brand, sh = S.sheets[brand], rows = sh.rows.filter(isUsed), nm = S.models.length;
+  $('#prevSeg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.brand === brand)));
+  const cls = k => k === 'i' ? 'in' : k === 'c' ? 'const' : 'calc';
+  let h = '<thead><tr>' + FULL.map(c => `<th class="${cls(c.kind)}" title="Columna ${c.L}">${esc(c.h)}</th>`).join('') + '</tr></thead><tbody>';
+  if (!rows.length) h += `<tr><td colspan="${FULL.length}" class="empty">Esta hoja aún no tiene unidades. Captúralas en la pestaña Facturación.</td></tr>`;
+  rows.forEach((row, idx) => {
+    const cells = cellsFor(brand, sh, row, 6 + idx, nm);
+    h += '<tr>' + FULL.map(c => { const v = cells[c.L].v; const money = MONEY.has(c.L) && typeof v === 'number'; return `<td class="${c.kind === 'f' ? 'calc' : ''} ${money ? 'num' : ''}">${esc(money ? fmt(v) : v)}</td>`; }).join('') + '</tr>';
+  });
+  $('#prevGrid').innerHTML = h + '</tbody>';
+}
+
+/* ----- Tabs ----- */
+function showTab(name) {
+  ui.tab = name;
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  document.querySelectorAll('.panel').forEach(p => p.hidden = p.id !== 'p-' + name);
+  if (name === 'prev') renderPrev();
+  if (name === 'bill') { renderBillHead(); renderGrid(); }
+  if (name === 'ctr') { ctr.m = null; renderCounters(); }
+}
+function renderAll() {
+  Object.values(S.sheets).forEach(padRows);
+  renderBillHead(); renderGrid(); renderFixed(); renderAlloc(); renderDealers(); renderModels(); renderCounters();
+  if (ui.tab === 'prev') renderPrev();
+}
+
+/* ----- Descarga y respaldo ----- */
+let DL = null;
+function updateExport() {
+  const b = $('#btnExport'), ok = !!DL;
+  b.disabled = !ok;
+  b.title = ok ? '' : 'La descarga no está disponible en esta vista';
+  $('#bkSave').disabled = !DL;
+}
+async function doSave(filename, data) {
+  try { await DL.save({ filename, data }); toast('Archivo listo'); }
+  catch (e) { if (e && e.code === 'declined') return; toast('No se pudo descargar el archivo'); }
+}
+async function exportCsv() {
+  if (!DL) return;
+  const groups = buildCsvGroups(ui.brand);
+  if (!groups.length) { toast('No hay unidades capturadas en esta hoja'); return; }
+  const shc = S.sheets[ui.brand]; bumpFromSheet(shc); save(); paintCounter(); renderCounters();
+  const tail = ctrKey(shc) ? `. Último No. de factura de ${shc.customer}: ${lastNum(shc)}` : '';
+  try { await DL.saveMany(groups.map(g => ({ filename: g.filename, data: toLatin1Bytes(g.text).buffer }))); }
+  catch (e) {
+    if (e && e.code === 'declined') { toast('Descarga cancelada'); return; }
+    toast('No se pudo descargar el archivo'); return;
+  }
+  toast((groups.length === 1 ? 'Archivo listo' : `${groups.length} archivos listos, uno por modelo`) + tail);
+}
+function setupTop() {
+  $('#btnExport').addEventListener('click', exportCsv);
+  $('#bkSave').addEventListener('click', () => { $('#bkMenu').open = false; if (DL) doSave('facturacion-respaldo.json', JSON.stringify(S)); });
+  $('#bkFile').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try { const o = JSON.parse(rd.result); if (!validState(o)) throw 0; S = o; ensureCounters(); save(); renderAll(); toast('Respaldo restaurado'); }
+      catch (err) { toast('Ese archivo no es un respaldo válido'); }
+    };
+    rd.readAsText(f); e.target.value = ''; $('#bkMenu').open = false;
+  });
+  $('#bkReset').addEventListener('click', e => confirmTwice(e.target, 'reset', 'Confirmar: borrar todo', () => { S = JSON.parse(JSON.stringify(SEED)); ensureCounters(); save(); renderAll(); $('#bkMenu').open = false; toast('Datos de ejemplo restaurados'); }));
+  document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
+  $('#prevSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; setBrand(b.dataset.brand); });
+  $('#btnSend').addEventListener('click', sendAlloc);
+  $('#allocFile').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    handleAllocFile(f); e.target.value = '';
+  });
+  $('#btnExport').disabled = true;
+}
+
+S = load() || JSON.parse(JSON.stringify(SEED));
+ensureCounters();
+setupTop(); setupBilling(); setupCounters(); renderAll();
+setStatus('Los cambios se guardan en este dispositivo');
+/* Descarga nativa del navegador. En iPhone/iPad se usa la hoja de compartir (Guardar en Archivos). */
+const mimeOf = n => /\.json$/i.test(n) ? 'application/json' : 'text/csv';
+const isApple = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function anchorSave(filename, data) {
+  const url = URL.createObjectURL(new Blob([data], { type: mimeOf(filename) })), a = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+async function shareFiles(files) {
+  if (!navigator.share || !navigator.canShare) return false;
+  const fl = files.map(f => new File([f.data], f.filename, { type: mimeOf(f.filename) }));
+  if (!navigator.canShare({ files: fl })) return false;
+  try { await navigator.share({ files: fl }); return true; }
+  catch (e) { if (e && e.name === 'AbortError') throw { code: 'declined' }; return false; }
+}
+DL = {
+  async saveMany(files) {
+    if (isApple && await shareFiles(files)) return;
+    for (let i = 0; i < files.length; i++) {
+      anchorSave(files[i].filename, files[i].data);
+      if (i < files.length - 1) await new Promise(r => setTimeout(r, 400));
+    }
+  },
+  save(f) { return this.saveMany([f]); }
+};
+updateExport();
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
